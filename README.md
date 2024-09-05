@@ -13,6 +13,6 @@ Refer to the [usage notebook](./usage.ipynb) for code examples.
 ## TODO
 
 - [x] Add support for color images
-- [ ] Improve documentation
+- [x] Improve documentation
 - [ ] Add tests
 - [ ] Distribute on PyPI
