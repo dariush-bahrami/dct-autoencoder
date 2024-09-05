@@ -8,7 +8,13 @@ from .utils import rgb_to_ycbcr, ycbcr_to_rgb
 
 
 class DCTAutoencoder(nn.Module):
-    def __init__(self, block_size: int = 8):
+    """DCT Autoencoder.
+
+    Args:
+        block_size (int, optional): The block size. Defaults to 8.
+    """
+
+    def __init__(self, block_size: int = 8) -> None:
         super().__init__()
         dct_basis = get_dct_basis(block_size)
         basis_functions = dct_basis.basis_functions
@@ -44,6 +50,15 @@ class DCTAutoencoder(nn.Module):
         self.embedding_dimension = (block_size**2) * 3
 
     def encode(self, rgb_images_batch: torch.Tensor) -> torch.Tensor:
+        """Encodes the input RGB images.
+
+        Args:
+            rgb_images_batch (torch.Tensor): The input RGB images. The images should
+                have shape (*, 3, height, width). Image values should be in the range [0, 1].
+
+        Returns:
+            torch.Tensor: The encoded images.
+        """
         # check input
         b, c, h, w = rgb_images_batch.shape
         assert c == 3, "Input images must be RGB"
@@ -68,7 +83,14 @@ class DCTAutoencoder(nn.Module):
         return torch.cat([y, cb, cr], dim=1)
 
     def decode(self, encodings_batch: torch.Tensor) -> torch.Tensor:
-        b, c, h, w = encodings_batch.shape
+        """Decodes the input encoded images.
+
+        Args:
+            encodings_batch (torch.Tensor): The input encoded images.
+
+        Returns:
+            torch.Tensor: The decoded images.
+        """
         org_ch = self.block_size**2
         y = encodings_batch[:, :org_ch, :, :]
         cb = encodings_batch[:, org_ch : org_ch * 2, :, :]
@@ -95,7 +117,18 @@ class DCTAutoencoder(nn.Module):
         self,
         luminance_compression_ratio: float = 1 / 2,
         chrominance_compression_ratio: float = 1 / 4,
-    ):
+    ) -> int:
+        """Get the number of compressed channels.
+
+        Args:
+            luminance_compression_ratio (float, optional): The luminance compression
+                ratio. Defaults to 1/2.
+            chrominance_compression_ratio (float, optional): The chrominance compression
+                ratio. Defaults to 1/4.
+
+        Returns:
+            int: The number of compressed channels.
+        """
         num_per_channel_encodings = self.block_size**2
         num_luminance_encodings = torch.round(
             num_per_channel_encodings * luminance_compression_ratio
@@ -111,6 +144,19 @@ class DCTAutoencoder(nn.Module):
         luminance_compression_ratio: float = 1 / 2,
         chrominance_compression_ratio: float = 1 / 4,
     ) -> torch.Tensor:
+        """Compresses the input encodings.
+
+        Args:
+            encodings_batch (torch.Tensor): The input encodings.
+            luminance_compression_ratio (float, optional): The luminance compression
+                ratio. Defaults to 1/2.
+            chrominance_compression_ratio (float, optional): The chrominance compression
+                ratio. Defaults to 1/4.
+
+        Returns:
+            torch.Tensor: The compressed encodings.
+        """
+
         num_per_channel_encodings = self.block_size**2
         num_luminance_encodings = torch.round(
             num_per_channel_encodings * luminance_compression_ratio
@@ -148,6 +194,19 @@ class DCTAutoencoder(nn.Module):
         luminance_compression_ratio: float = 1 / 2,
         chrominance_compression_ratio: float = 1 / 4,
     ) -> torch.Tensor:
+        """Decompresses the input compressed encodings.
+
+        Args:
+            compressed_encodings_batch (torch.Tensor): The input compressed encodings.
+            luminance_compression_ratio (float, optional): The luminance compression
+                ratio. Defaults to 1/2.
+            chrominance_compression_ratio (float, optional): The chrominance compression
+                ratio. Defaults to 1/4.
+
+        Returns:
+            torch.Tensor: The decompressed encodings.
+        """
+
         b, _, h, w = compressed_encodings_batch.shape
         dtype = compressed_encodings_batch.dtype
         device = compressed_encodings_batch.device

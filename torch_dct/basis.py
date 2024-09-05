@@ -13,6 +13,14 @@ class DCTBasis(NamedTuple):
 
 
 def get_dct_basis(block_size: int = 8) -> DCTBasis:
+    """Generate the DCT basis variables for a given block size.
+
+    Args:
+        block_size (int, optional): The block size. Defaults to 8.
+
+    Returns:
+        DCTBasis: The DCT basis variables.
+    """
     frequencies = np.arange(block_size)
     x = np.arange(block_size)
     y = np.arange(block_size)

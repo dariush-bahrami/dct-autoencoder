@@ -11,7 +11,20 @@ def visualize_dct_basis_functions(
     title_color: str = "k",
     title_fontsize: int = 20,
     cmap: str = "gray",
-):
+) -> tuple:
+    """Visualize the DCT basis functions.
+
+    Args:
+        dct_constants (DCTBasis): The DCT basis constants.
+        figsize (int, optional): The figure size. Defaults to 8.
+        fig_facecolor (str, optional): The figure facecolor. Defaults to "#fb6a2c".
+        title_color (str, optional): The title color. Defaults to "k".
+        title_fontsize (int, optional): The title fontsize. Defaults to 20.
+        cmap (str, optional): The colormap. Defaults to "gray".
+
+    Returns:
+        tuple: The figure and axis.
+    """
     block_size = dct_constants.block_size
     basis_functions = dct_constants.basis_functions
     basis_functions_image = np.zeros((block_size * block_size, block_size * block_size))
