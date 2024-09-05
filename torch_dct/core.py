@@ -7,7 +7,7 @@ from .basis import get_dct_basis
 from .utils import rgb_to_ycbcr, ycbcr_to_rgb
 
 
-class DCTAutoEncoder(nn.Module):
+class DCTAutoencoder(nn.Module):
     def __init__(self, block_size: int = 8):
         super().__init__()
         dct_basis = get_dct_basis(block_size)
