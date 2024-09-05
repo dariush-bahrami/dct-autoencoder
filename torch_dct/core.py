@@ -61,10 +61,10 @@ class DCTAutoencoder(nn.Module):
         """
         # check input
         b, c, h, w = rgb_images_batch.shape
-        assert c == 3, "Input images must be RGB"
-        assert (
-            h % self.block_size == 0 and w % self.block_size == 0
-        ), "Image dimensions must be divisible by the block size"
+        if c != 3:
+            raise ValueError("Input images must be RGB")
+        if h % self.block_size != 0 or w % self.block_size != 0:
+            raise ValueError("Image dimensions must be divisible by the block size")
         # convert to YCbCr
         ycbcr_tsr = rgb_to_ycbcr(rgb_images_batch)
         # normalize to -1, 1
