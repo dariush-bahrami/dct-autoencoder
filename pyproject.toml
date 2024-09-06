@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "torch-dct"
+name = "dct-autoencoder"
 version = "0.1.0"
 description = ""
 authors = ["Dariush Bahrami <dariushbahrami1993@gmail.com>"]
@@ -7,6 +7,9 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.10"
+numpy = "^2.1.1"
+torch = "^2.0.0"
+matplotlib = {vrsion = "^3.9.2", optional = true}
 
 
 [build-system]
