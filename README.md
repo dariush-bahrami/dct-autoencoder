@@ -2,7 +2,7 @@
 
 2D Discrete Cosine Transform in PyTorch
 
-![DCT Basis Functions](./assets/figures/dct_basis_functions_block_size_16.png)
+![DCT Basis Functions](https://raw.githubusercontent.com/dariush-bahrami/dct-autoencoder/main/assets/figures/dct_basis_functions_block_size_16.png)
 
 
 ## Usage
