@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "dct-autoencoder"
-version = "0.1.0"
+version = "0.1.1"
 description = ""
 authors = ["Dariush Bahrami <dariushbahrami1993@gmail.com>"]
 readme = "README.md"
@@ -8,9 +8,8 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.10"
 numpy = "^2.1.1"
-torch = "^2.0.0"
-matplotlib = {vrsion = "^3.9.2", optional = true}
-
+matplotlib = {version = "^3.9.2", optional = true}
+torch = "^2.4.1"
 
 [build-system]
 requires = ["poetry-core"]
