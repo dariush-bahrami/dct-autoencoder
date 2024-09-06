@@ -7,7 +7,7 @@
 
 ## Usage
 
-Refer to the [usage notebook](./usage.ipynb) for code examples.
+Refer to the [usage notebook](https://github.com/dariush-bahrami/dct-autoencoder/blob/main/usage.ipynb) for code examples.
 
 
 ## TODO
