@@ -79,8 +79,10 @@ class DCTAutoencoder(nn.Module):
         y = c1 * c2 * F.conv2d(y, self.kernels, stride=self.block_size.item())
         cb = c1 * c2 * F.conv2d(cb, self.kernels, stride=self.block_size.item())
         cr = c1 * c2 * F.conv2d(cr, self.kernels, stride=self.block_size.item())
-
-        return torch.cat([y, cb, cr], dim=1)
+        encodings_batch = torch.cat([y, cb, cr], dim=1)
+        # scale down
+        encodings_batch = encodings_batch / self.block_size
+        return encodings_batch
 
     def decode(self, encodings_batch: torch.Tensor) -> torch.Tensor:
         """Decodes the input encoded images.
@@ -91,6 +93,8 @@ class DCTAutoencoder(nn.Module):
         Returns:
             torch.Tensor: The decoded images.
         """
+        # scale up
+        encodings_batch = encodings_batch * self.block_size
         org_ch = self.block_size**2
         y = encodings_batch[:, :org_ch, :, :]
         cb = encodings_batch[:, org_ch : org_ch * 2, :, :]
