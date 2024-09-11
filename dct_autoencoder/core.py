@@ -22,9 +22,13 @@ class DCTAutoencoder(nn.Module):
         spatial_frequencies_magnitude = dct_basis.spatial_frequencies_magnitude.reshape(
             -1
         )
+        spatial_frequencies_components = (
+            dct_basis.spatial_frequencies_components.reshape(-1, 2)
+        )
         sort_indices = np.argsort(spatial_frequencies_magnitude)
         kernels = kernels[sort_indices]
         spatial_frequencies_magnitude = spatial_frequencies_magnitude[sort_indices]
+        spatial_frequencies_components = spatial_frequencies_components[sort_indices]
         kernels = kernels[:, np.newaxis, :, :]
         multiplication_factor_scalar = dct_basis.multiplication_factor_scalar
         multiplication_factor_matrix = dct_basis.multiplication_factor_matrix
@@ -37,6 +41,10 @@ class DCTAutoencoder(nn.Module):
         self.register_buffer(
             "spatial_frequencies_magnitude",
             torch.from_numpy(spatial_frequencies_magnitude),
+        )
+        self.register_buffer(
+            "spatial_frequencies_components",
+            torch.from_numpy(spatial_frequencies_components),
         )
         self.register_buffer("block_size", torch.tensor(block_size))
         self.register_buffer(
