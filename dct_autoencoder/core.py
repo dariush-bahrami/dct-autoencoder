@@ -14,6 +14,10 @@ class DCTAutoencoder(nn.Module):
 
     Args:
         block_size (int, optional): The block size. Defaults to 8.
+        luminance_compression_ratio (float, optional): The luminance compression ratio.
+            Defaults to 1/2.
+        chrominance_compression_ratio (float, optional): The chrominance compression ratio.
+            Defaults to 1/4.
     """
 
     def __init__(
@@ -198,7 +202,7 @@ class DCTAutoencoder(nn.Module):
                 + 2 * self.compression_chrominance_passband.item()
             )
 
-    def compress(self, encodings):
+    def compress(self, encodings: torch.Tensor) -> torch.Tensor:
         if not self.do_compression:
             return encodings
         else:
@@ -211,7 +215,7 @@ class DCTAutoencoder(nn.Module):
             compressed_encoding = torch.cat([l, c1, c2], dim=1)
             return compressed_encoding
 
-    def decompress(self, compressed_encoding):
+    def decompress(self, compressed_encoding: torch.Tensor) -> torch.Tensor:
         if not self.do_compression:
             return compressed_encoding
         else:
