@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "dct-autoencoder"
-version = "0.1.2"
+version = "0.2.0"
 description = ""
 authors = ["Dariush Bahrami <dariushbahrami1993@gmail.com>"]
 readme = "README.md"
