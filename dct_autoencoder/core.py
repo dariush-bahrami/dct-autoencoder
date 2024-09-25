@@ -1,3 +1,5 @@
+import math
+
 import numpy as np
 import torch
 from torch import nn
@@ -14,7 +16,12 @@ class DCTAutoencoder(nn.Module):
         block_size (int, optional): The block size. Defaults to 8.
     """
 
-    def __init__(self, block_size: int = 8) -> None:
+    def __init__(
+        self,
+        block_size: int = 8,
+        luminance_compression_ratio: float = 1 / 2,
+        chrominance_compression_ratio: float = 1 / 4,
+    ) -> None:
         super().__init__()
         dct_basis = get_dct_basis(block_size)
         basis_functions = dct_basis.basis_functions
@@ -56,6 +63,63 @@ class DCTAutoencoder(nn.Module):
         )
 
         self.embedding_dimension = (block_size**2) * 3
+
+        # compressor initialization
+        if luminance_compression_ratio == 1 and chrominance_compression_ratio == 1:
+            self.do_compression = False
+            self.compression_luminance_mask = torch.ones(
+                block_size**2,
+                dtype=bool,
+                device=self.spatial_frequencies_components.device,
+            )
+            self.compression_chrominance_mask = torch.ones(
+                block_size**2,
+                dtype=bool,
+                device=self.spatial_frequencies_components.device,
+            )
+            self.compression_luminance_passband = block_size**2
+            self.compression_chrominance_passband = block_size**2
+        else:
+            original_frequencies = self.spatial_frequencies_components.to(
+                dtype=torch.float32
+            )
+            luminance_block_size = math.ceil(block_size * luminance_compression_ratio)
+            chrominance_block_size = math.ceil(
+                block_size * chrominance_compression_ratio
+            )
+            luminance_frequencies = get_dct_basis(
+                luminance_block_size
+            ).spatial_frequencies_components.reshape(-1, 2)
+            luminance_frequencies = torch.from_numpy(luminance_frequencies).to(
+                device=original_frequencies.device, dtype=torch.float32
+            )
+            chrominance_frequencies = get_dct_basis(
+                chrominance_block_size
+            ).spatial_frequencies_components.reshape(-1, 2)
+            chrominance_frequencies = torch.from_numpy(chrominance_frequencies).to(
+                device=original_frequencies.device, dtype=torch.float32
+            )
+            indices = torch.arange(block_size**2, device=original_frequencies.device)
+            luminance_mask = torch.isin(
+                indices,
+                torch.cdist(original_frequencies, luminance_frequencies, p=2).argmin(
+                    dim=0
+                ),
+            )
+            chrominance_mask = torch.isin(
+                indices,
+                torch.cdist(original_frequencies, chrominance_frequencies, p=2).argmin(
+                    dim=0
+                ),
+            )
+            luminance_passband = luminance_mask.sum()
+            chrominance_passband = chrominance_mask.sum()
+
+            self.do_compression = True
+            self.compression_luminance_mask = luminance_mask
+            self.compression_chrominance_mask = chrominance_mask
+            self.compression_luminance_passband = luminance_passband
+            self.compression_chrominance_passband = chrominance_passband
 
     def encode(self, rgb_images_batch: torch.Tensor) -> torch.Tensor:
         """Encodes the input RGB images.
@@ -125,148 +189,69 @@ class DCTAutoencoder(nn.Module):
         rgb_images_batch = ycbcr_to_rgb(ycbcr_tsr)
         return rgb_images_batch
 
-    def get_num_compressed_channels(
-        self,
-        luminance_compression_ratio: float = 1 / 2,
-        chrominance_compression_ratio: float = 1 / 4,
-    ) -> int:
-        """Get the number of compressed channels.
+    def get_num_compressed_channels(self) -> int:
+        if not self.do_compression:
+            return self.block_size**2 * 3
+        else:
+            return (
+                self.compression_luminance_passband.item()
+                + 2 * self.compression_chrominance_passband.item()
+            )
 
-        Args:
-            luminance_compression_ratio (float, optional): The luminance compression
-                ratio. Defaults to 1/2.
-            chrominance_compression_ratio (float, optional): The chrominance compression
-                ratio. Defaults to 1/4.
+    def compress(self, encodings):
+        if not self.do_compression:
+            return encodings
+        else:
+            l, c1, c2 = encodings.chunk(3, dim=1)
+            luminance_mask = self.compression_luminance_mask
+            chrominance_mask = self.compression_chrominance_mask
+            l = l[:, luminance_mask, :, :]
+            c1 = c1[:, chrominance_mask, :, :]
+            c2 = c2[:, chrominance_mask, :, :]
+            compressed_encoding = torch.cat([l, c1, c2], dim=1)
+            return compressed_encoding
 
-        Returns:
-            int: The number of compressed channels.
-        """
-        num_per_channel_encodings = self.block_size**2
-        num_luminance_encodings = torch.round(
-            num_per_channel_encodings * luminance_compression_ratio
-        ).int()
-        num_chrominance_encodings = torch.round(
-            num_per_channel_encodings * chrominance_compression_ratio
-        ).int()
-        return (num_luminance_encodings + 2 * num_chrominance_encodings).item()
-
-    def compress(
-        self,
-        encodings_batch: torch.Tensor,
-        luminance_compression_ratio: float = 1 / 2,
-        chrominance_compression_ratio: float = 1 / 4,
-    ) -> torch.Tensor:
-        """Compresses the input encodings.
-
-        Args:
-            encodings_batch (torch.Tensor): The input encodings.
-            luminance_compression_ratio (float, optional): The luminance compression
-                ratio. Defaults to 1/2.
-            chrominance_compression_ratio (float, optional): The chrominance compression
-                ratio. Defaults to 1/4.
-
-        Returns:
-            torch.Tensor: The compressed encodings.
-        """
-
-        num_per_channel_encodings = self.block_size**2
-        num_luminance_encodings = torch.round(
-            num_per_channel_encodings * luminance_compression_ratio
-        ).int()
-        num_chrominance_encodings = torch.round(
-            num_per_channel_encodings * chrominance_compression_ratio
-        ).int()
-
-        luminance_encodings = encodings_batch[:, :num_per_channel_encodings]
-        chrominance_blue_encodings = encodings_batch[
-            :, num_per_channel_encodings : 2 * num_per_channel_encodings
-        ]
-        chrominance_red_encodings = encodings_batch[:, 2 * num_per_channel_encodings :]
-
-        luminance_encodings = luminance_encodings[:, :num_luminance_encodings]
-        chrominance_blue_encodings = chrominance_blue_encodings[
-            :, :num_chrominance_encodings
-        ]
-        chrominance_red_encodings = chrominance_red_encodings[
-            :, :num_chrominance_encodings
-        ]
-        compressed_dct_encodings = torch.cat(
-            [
-                luminance_encodings,
-                chrominance_blue_encodings,
-                chrominance_red_encodings,
-            ],
-            dim=1,
-        )
-        return compressed_dct_encodings
-
-    def decompress(
-        self,
-        compressed_encodings_batch: torch.Tensor,
-        luminance_compression_ratio: float = 1 / 2,
-        chrominance_compression_ratio: float = 1 / 4,
-    ) -> torch.Tensor:
-        """Decompresses the input compressed encodings.
-
-        Args:
-            compressed_encodings_batch (torch.Tensor): The input compressed encodings.
-            luminance_compression_ratio (float, optional): The luminance compression
-                ratio. Defaults to 1/2.
-            chrominance_compression_ratio (float, optional): The chrominance compression
-                ratio. Defaults to 1/4.
-
-        Returns:
-            torch.Tensor: The decompressed encodings.
-        """
-
-        b, _, h, w = compressed_encodings_batch.shape
-        dtype = compressed_encodings_batch.dtype
-        device = compressed_encodings_batch.device
-
-        num_per_channel_encodings = self.block_size**2
-        num_luminance_encodings = torch.floor(
-            num_per_channel_encodings * luminance_compression_ratio
-        ).int()
-        num_chrominance_encodings = torch.floor(
-            num_per_channel_encodings * chrominance_compression_ratio
-        ).int()
-        compressed_luminance_encodings = compressed_encodings_batch[
-            :, :num_luminance_encodings
-        ]
-        compressed_chrominance_blue_encodings = compressed_encodings_batch[
-            :,
-            num_luminance_encodings : num_luminance_encodings
-            + num_chrominance_encodings,
-        ]
-        compressed_chrominance_red_encodings = compressed_encodings_batch[
-            :, num_luminance_encodings + num_chrominance_encodings :
-        ]
-
-        luminance_encodings = torch.zeros(
-            b, num_per_channel_encodings, h, w, dtype=dtype, device=device
-        )
-        luminance_encodings[:, :num_luminance_encodings, :, :] = (
-            compressed_luminance_encodings
-        )
-        chrominance_blue_encodings = torch.zeros(
-            b, num_per_channel_encodings, h, w, dtype=dtype, device=device
-        )
-        chrominance_blue_encodings[:, :num_chrominance_encodings, :, :] = (
-            compressed_chrominance_blue_encodings
-        )
-        chrominance_red_encodings = torch.zeros(
-            b, num_per_channel_encodings, h, w, dtype=dtype, device=device
-        )
-        chrominance_red_encodings[:, :num_chrominance_encodings, :, :] = (
-            compressed_chrominance_red_encodings
-        )
-        decompressed_dct_encodings = torch.cat(
-            [
-                luminance_encodings,
-                chrominance_blue_encodings,
-                chrominance_red_encodings,
-            ],
-            dim=1,
-        )
-
-        return decompressed_dct_encodings
+    def decompress(self, compressed_encoding):
+        if not self.do_compression:
+            return compressed_encoding
+        else:
+            batch_size, _, height, width = compressed_encoding.shape
+            device = compressed_encoding.device
+            dtype = compressed_encoding.dtype
+            luminance_mask = self.compression_luminance_mask
+            chrominance_mask = self.compression_chrominance_mask
+            luminance_passband = self.compression_luminance_passband.item()
+            chrominance_passband = self.compression_chrominance_passband.item()
+            l_comp, c1_comp, c2_comp = compressed_encoding.split(
+                [luminance_passband, chrominance_passband, chrominance_passband],
+                dim=1,
+            )
+            l = torch.zeros(
+                batch_size,
+                self.block_size**2,
+                height,
+                width,
+                device=device,
+                dtype=dtype,
+            )
+            l[:, luminance_mask, :, :] = l_comp
+            c1 = torch.zeros(
+                batch_size,
+                self.block_size**2,
+                height,
+                width,
+                device=device,
+                dtype=dtype,
+            )
+            c1[:, chrominance_mask, :, :] = c1_comp
+            c2 = torch.zeros(
+                batch_size,
+                self.block_size**2,
+                height,
+                width,
+                device=device,
+                dtype=dtype,
+            )
+            c2[:, chrominance_mask, :, :] = c2_comp
+            decompressed_encoding = torch.cat([l, c1, c2], dim=1)
+            return decompressed_encoding
