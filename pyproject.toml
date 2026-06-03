@@ -1,16 +1,36 @@
-[tool.poetry]
+[project]
 name = "dct-autoencoder"
-version = "0.2.1"
-description = ""
-authors = ["Dariush Bahrami <dariushbahrami1993@gmail.com>"]
+version = "0.3.0"
+description = "Discrete Cosine Transform in PyTorch"
 readme = "README.md"
+license = { text = "MIT" }
+authors = [
+    { name = "Dariush Bahrami", email = "dariushbahrami1993@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "numpy>=2.4.6",
+]
 
-[tool.poetry.dependencies]
-python = "^3.10"
-numpy = "^2.1.1"
-matplotlib = {version = "^3.9.2", optional = true}
-torch = "^2.4.1"
+[project.optional-dependencies]
+torch = [
+    "torch>=2.0.0",
+    "torchvision>=0.15.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/dariush-bahrami/dct-autoencoder"
+Repository = "https://github.com/dariush-bahrami/dct-autoencoder"
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["uv_build>=0.11.16,<0.12.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "dct-autoencoder[torch]",
+    "ipykernel>=7.2.0",
+    "ipywidgets>=8.1.8",
+    "matplotlib>=3.10.9",
+    "pillow>=12.2.0",
+]
