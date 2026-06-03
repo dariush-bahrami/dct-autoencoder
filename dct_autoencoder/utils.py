@@ -19,10 +19,11 @@ def ycbcr_to_rgb(image: torch.Tensor) -> torch.Tensor:
     cb_shifted = cb - delta
     cr_shifted = cr - delta
 
-    r = y + 1.403 * cr_shifted
-    g = y - 0.714 * cr_shifted - 0.344 * cb_shifted
-    b = y + 1.773 * cb_shifted
-    return torch.stack([r, g, b], -3).clamp(0, 1)
+    # Exact inverse of the forward matrix: 1/0.713, 0.299/(0.713*0.587), 0.114/(0.564*0.587), 1/0.564
+    r = y + 1.40252 * cr_shifted
+    g = y - 0.71440 * cr_shifted - 0.34434 * cb_shifted
+    b = y + 1.77305 * cb_shifted
+    return torch.stack([r, g, b], -3)
 
 
 def rgb_to_ycbcr(image) -> torch.Tensor:
