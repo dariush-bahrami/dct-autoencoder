@@ -254,6 +254,7 @@ dev = [
     { name = "ipywidgets" },
     { name = "isort" },
     { name = "matplotlib" },
+    { name = "numpy" },
     { name = "pillow" },
 ]
 
@@ -271,6 +272,7 @@ dev = [
     { name = "ipywidgets", specifier = ">=8.1.8" },
     { name = "isort", specifier = ">=8.0.1" },
     { name = "matplotlib", specifier = ">=3.10.9" },
+    { name = "numpy", specifier = ">=2.4.6" },
     { name = "pillow", specifier = ">=12.2.0" },
 ]
 

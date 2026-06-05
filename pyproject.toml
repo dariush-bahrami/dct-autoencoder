@@ -31,5 +31,6 @@ dev = [
     "ipywidgets>=8.1.8",
     "isort>=8.0.1",
     "matplotlib>=3.10.9",
+    "numpy>=2.4.6",
     "pillow>=12.2.0",
 ]
