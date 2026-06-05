@@ -49,7 +49,7 @@ Then install `dct-autoencoder` from PyPI:
 pip install dct-autoencoder
 ```
 
-The package depends on NumPy; PyTorch is required to use `DCTAutoencoder` but is not bundled so you can pick the correct build for your system.
+PyTorch is required to use `DCTAutoencoder` but is not bundled so you can pick the correct build for your system.
 
 ### Development setup
 
