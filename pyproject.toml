@@ -1,6 +1,6 @@
 [project]
 name = "dct-autoencoder"
-version = "1.0.0"
+version = "1.1.0"
 description = "Discrete Cosine Transform in PyTorch"
 readme = "README.md"
 license = { text = "MIT" }
@@ -8,9 +8,7 @@ authors = [
     { name = "Dariush Bahrami", email = "dariushbahrami1993@gmail.com" }
 ]
 requires-python = ">=3.12"
-dependencies = [
-    "numpy>=2.4.6",
-]
+dependencies = []
 
 [project.optional-dependencies]
 torch = [

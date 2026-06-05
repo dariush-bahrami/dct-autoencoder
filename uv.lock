@@ -238,11 +238,8 @@ wheels = [
 
 [[package]]
 name = "dct-autoencoder"
-version = "1.0.0"
+version = "1.1.0"
 source = { editable = "." }
-dependencies = [
-    { name = "numpy" },
-]
 
 [package.optional-dependencies]
 torch = [
@@ -262,7 +259,6 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "numpy", specifier = ">=2.4.6" },
     { name = "torch", marker = "extra == 'torch'", specifier = ">=2.0.0" },
     { name = "torchvision", marker = "extra == 'torch'", specifier = ">=0.15.0" },
 ]
