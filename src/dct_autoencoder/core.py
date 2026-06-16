@@ -17,6 +17,8 @@ class DCTAutoencoder(nn.Module):
         num_chrominance_compressed_channels (int | None, optional): Number of lowest-frequency
             chrominance channels to retain after compression. ``None`` keeps all channels
             (no compression). Defaults to ``None``.
+        scale_encodings: bool = True,
+            Whether to rescale the encodings to the range [0, 1]. Defaults to False.
     """
 
     def __init__(
@@ -24,9 +26,11 @@ class DCTAutoencoder(nn.Module):
         block_size: int = 8,
         num_luminance_compressed_channels: int | None = None,
         num_chrominance_compressed_channels: int | None = None,
+        scale_encodings: bool = False,
     ) -> None:
         super().__init__()
         total_channels = block_size**2
+        self.scale_encodings = scale_encodings
 
         if num_luminance_compressed_channels is not None and not (
             1 <= num_luminance_compressed_channels <= total_channels
@@ -144,23 +148,25 @@ class DCTAutoencoder(nn.Module):
         cb = c1 * c2 * F.conv2d(cb, self.kernels, stride=self.block_size.item())
         cr = c1 * c2 * F.conv2d(cr, self.kernels, stride=self.block_size.item())
         encodings_batch = torch.cat([y, cb, cr], dim=1)
-        # scale down
-        encodings_batch = encodings_batch / self.block_size
+        # scale encodings down if requested
+        if self.scale_encodings:
+            encodings_batch = encodings_batch / self.block_size
         return encodings_batch
 
     def decode(
-        self, encodings_batch: torch.Tensor, clamp_output: bool = True
+        self, encodings_batch: torch.Tensor, clamp_output: bool = False
     ) -> torch.Tensor:
         """Decodes the input encoded images.
 
         Args:
             encodings_batch (torch.Tensor): The input encoded images.
-            clamp_output (bool, optional): Whether to clamp the output to the range [0, 1]. Defaults to True.
+            clamp_output (bool, optional): Whether to clamp the output to the range [0, 1]. Defaults to False.
         Returns:
             torch.Tensor: The decoded images.
         """
-        # scale up
-        encodings_batch = encodings_batch * self.block_size
+        # scale up encodings if requested
+        if self.scale_encodings:
+            encodings_batch = encodings_batch * self.block_size
         org_ch = self.block_size**2
         y = encodings_batch[:, :org_ch, :, :]
         cb = encodings_batch[:, org_ch : org_ch * 2, :, :]
